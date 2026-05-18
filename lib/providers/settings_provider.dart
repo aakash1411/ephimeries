@@ -48,9 +48,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   Future<void> setAcceptedLegalVersion(int v) =>
       _save(state.copyWith(acceptedLegalVersion: v));
-
-  Future<void> setAnalysisEntitled(bool v) =>
-      _save(state.copyWith(analysisEntitled: v));
 }
 
 final settingsProvider =

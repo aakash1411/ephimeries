@@ -27,7 +27,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
   Future<void> _shareChart(VedicChartData chart) async {
     setState(() => _sharing = true);
     try {
-      final df = DateFormat.yMMMd().add_jm();
+      final df = DateFormat('dd/MM/yyyy').add_jm();
       await _share.shareChart(
         boundaryKey: _shareKey,
         fileName: 'ephimeries-${chart.profile.name}-D1',

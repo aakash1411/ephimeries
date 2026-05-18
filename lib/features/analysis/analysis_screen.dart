@@ -6,9 +6,7 @@ import '../../data/services/apple_intelligence_service.dart';
 import '../../data/services/timezone_service.dart';
 import '../../domain/models/birth_profile.dart';
 import '../../domain/models/enums.dart';
-import '../../features/paywall/paywall_screen.dart';
 import '../../providers/chart_providers.dart';
-import '../../providers/purchase_provider.dart';
 import '../../widgets/common/chart_skeleton.dart';
 import 'analysis_engine.dart';
 import 'planetary_dignity.dart';
@@ -32,17 +30,6 @@ class AnalysisScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Pro Analysis is a one-time IAP. Until the user has purchased or
-    // redeemed a tester code we render the paywall in place of the
-    // report. The IAP service writes the entitlement back to settings,
-    // so this build re-runs and unlocks the report immediately on
-    // success.
-    final entitled =
-        ref.watch(purchaseProvider.select((s) => s.entitled));
-    if (!entitled) {
-      return const PaywallScreen(embedded: true);
-    }
-
     final natalAsync = ref.watch(vedicChartProvider);
     final dashaAsync = ref.watch(dashaProvider);
     final transitAsync = ref.watch(transitChartProvider);
@@ -450,7 +437,7 @@ class _DashaSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final df = DateFormat.yMMMd();
+    final df = DateFormat('dd/MM/yyyy');
     String fmt(DateTime utc) =>
         TimezoneService.formatInZone(utc, timezoneName, df);
     return Card(

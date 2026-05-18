@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/content/legal/legal_text.dart';
 import '../../domain/models/enums.dart';
-import '../../providers/purchase_provider.dart';
 import '../../providers/settings_provider.dart';
 
 const String _kAppStoreUrl =
@@ -149,8 +148,6 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          const _SectionHeader('Pro Analysis'),
-          _PurchaseTile(),
           const _SectionHeader('Legal'),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
@@ -270,42 +267,3 @@ class _AboutTile extends StatelessWidget {
   }
 }
 
-class _PurchaseTile extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(purchaseProvider);
-    final notifier = ref.read(purchaseProvider.notifier);
-    if (state.entitled) {
-      return ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: const Text('Pro Analysis unlocked'),
-        subtitle: const Text('Thank you for supporting the app.'),
-      );
-    }
-    return Column(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.lock_open),
-          title: const Text('Unlock Pro Analysis'),
-          subtitle: Text(
-            state.product == null
-                ? 'One-time purchase. Loading price…'
-                : 'One-time ${state.product!.price}.',
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: state.busy
-              ? null
-              : () {
-                  HapticFeedback.lightImpact();
-                  notifier.purchase();
-                },
-        ),
-        ListTile(
-          leading: const Icon(Icons.restore),
-          title: const Text('Restore purchase'),
-          onTap: state.busy ? null : notifier.restore,
-        ),
-      ],
-    );
-  }
-}

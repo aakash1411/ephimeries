@@ -143,6 +143,7 @@ class _SouthIndianChartState extends State<SouthIndianChart>
                     houseForSign: _houseForSign,
                     title: widget.title,
                     showRetrograde: widget.showRetrograde,
+                    chartSize: constraints.maxWidth,
                   ),
                   size: Size.infinite,
                 ),
@@ -163,6 +164,7 @@ class _SouthIndianPainter extends CustomPainter {
     required this.activeSign,
     required this.houseForSign,
     required this.showRetrograde,
+    required this.chartSize,
     this.title,
   });
 
@@ -173,6 +175,10 @@ class _SouthIndianPainter extends CustomPainter {
   final int Function(ZodiacSign) houseForSign;
   final bool showRetrograde;
   final String? title;
+  final double chartSize;
+
+  /// Scale factor relative to a 300px reference chart.
+  double get _s => (chartSize / 300).clamp(1.0, 2.5);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -259,7 +265,7 @@ class _SouthIndianPainter extends CustomPainter {
         centerRect.center,
         textStyle.copyWith(
           color: palette.text,
-          fontSize: 13,
+          fontSize: 13 * _s,
           fontWeight: FontWeight.w600,
         ),
         align: TextAlign.center,
@@ -267,8 +273,8 @@ class _SouthIndianPainter extends CustomPainter {
       _drawText(
         canvas,
         'As: ${data.ascendantSign.sanskrit}',
-        centerRect.center.translate(0, 18),
-        textStyle.copyWith(color: palette.muted, fontSize: 10),
+        centerRect.center.translate(0, 18 * _s),
+        textStyle.copyWith(color: palette.muted, fontSize: 10 * _s),
         align: TextAlign.center,
       );
     }
@@ -285,17 +291,17 @@ class _SouthIndianPainter extends CustomPainter {
     _drawText(
       canvas,
       abbr,
-      rect.topLeft + const Offset(8, 10),
-      textStyle.copyWith(color: palette.muted, fontSize: 9),
+      rect.topLeft + Offset(8, 8 * _s),
+      textStyle.copyWith(color: palette.muted, fontSize: 11 * _s),
     );
     // House number top-right (italic muted)
     _drawText(
       canvas,
       '$house',
-      rect.topRight + const Offset(-8, 10),
+      rect.topRight + Offset(-8, 8 * _s),
       textStyle.copyWith(
         color: palette.muted,
-        fontSize: 9,
+        fontSize: 10 * _s,
         fontStyle: FontStyle.italic,
       ),
     );
@@ -304,10 +310,10 @@ class _SouthIndianPainter extends CustomPainter {
       _drawText(
         canvas,
         'As',
-        rect.center.translate(0, rect.height / 2 - 10),
+        rect.center.translate(0, rect.height / 2 - 10 * _s),
         textStyle.copyWith(
           color: palette.text,
-          fontSize: 9,
+          fontSize: 11 * _s,
           fontWeight: FontWeight.bold,
         ),
         align: TextAlign.center,
@@ -318,7 +324,7 @@ class _SouthIndianPainter extends CustomPainter {
   }
 
   void _drawPlanetStack(Canvas canvas, Offset center, List<PlanetPosition> ps) {
-    const rowHeight = 12.0;
+    final rowHeight = 13.0 * _s;
     final startY = center.dy - ((ps.length - 1) * rowHeight / 2);
     for (var i = 0; i < ps.length; i++) {
       final p = ps[i];
@@ -334,7 +340,7 @@ class _SouthIndianPainter extends CustomPainter {
         Offset(center.dx, startY + i * rowHeight),
         textStyle.copyWith(
           color: color,
-          fontSize: 11,
+          fontSize: 12 * _s,
           fontWeight: FontWeight.w600,
           decoration: showRx ? TextDecoration.underline : null,
         ),
@@ -366,5 +372,6 @@ class _SouthIndianPainter extends CustomPainter {
       old.data != data ||
       old.activeSign != activeSign ||
       old.palette != palette ||
-      old.showRetrograde != showRetrograde;
+      old.showRetrograde != showRetrograde ||
+      old.chartSize != chartSize;
 }

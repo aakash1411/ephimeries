@@ -5,6 +5,8 @@ import 'package:ephimeries/domain/models/app_settings.dart';
 import 'package:ephimeries/domain/models/birth_profile.dart';
 import 'package:ephimeries/domain/models/enums.dart';
 import 'package:ephimeries/providers/birth_profiles_provider.dart';
+import 'package:ephimeries/data/services/timezone_service.dart';
+import 'package:ephimeries/providers/chart_providers.dart';
 import 'package:ephimeries/providers/hive_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +44,10 @@ void main() {
   };
 
   setUpAll(() async {
+    // Load the IANA timezone database so TimezoneService.formatInZone
+    // works for the birth profiles seeded below.
+    TimezoneService.ensureInitialized();
+
     // Initialise Hive in the app's documents dir so the running app reads
     // the same boxes we seed below.
     final dir = await getApplicationDocumentsDirectory();
@@ -99,6 +105,7 @@ void main() {
       AppSettings(
         acceptedLegalVersion: 999, // any value >= kLegalTextVersion
         analysisEntitled: true,
+        onboardingCompleted: true,
       ),
     );
   });
@@ -116,20 +123,22 @@ void main() {
           hiveBoxesProvider.overrideWithValue(
             HiveBoxes(profiles: profilesBox, settings: settingsBox),
           ),
+          jyotishProvider.overrideWithValue(engine),
           activeProfileIdProvider.overrideWith((_) => 'reviewer'),
         ],
         child: const EphimeriesApp(),
       ),
     );
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    // Splash waits 400ms before redirecting to /home.
+    await tester.pump(const Duration(milliseconds: 800));
+    await _settle(tester);
 
     // 1. Home / profile picker.
-    await _settle(tester);
     await _shoot(binding, 1, 'home', captions[1]!);
 
-    // Tap into Reviewer to enter the chart shell. Adjust the finder
-    // to match your home cell.
-    await tester.tap(find.text('Reviewer').first);
+    // Tap the Reviewer profile card (the Leo-lagna reference chart) to
+    // enter the chart shell.
+    await tester.tap(find.widgetWithText(Card, 'Reviewer'));
     await _settle(tester);
 
     // 2. Natal chart D1.
@@ -155,14 +164,18 @@ void main() {
     await _settle(tester);
     await _shoot(binding, 6, 'analysis_overview', captions[6]!);
 
-    // 7. AI reading section. Scroll to the bottom of the analysis
-    // screen so the AI card is visible.
-    await tester.drag(find.byType(ListView).first, const Offset(0, -1200));
-    await _settle(tester);
+    // 7. AI reading section. Scroll down within whichever scrollable the
+    // analysis screen renders (ListView or SingleChildScrollView) so the
+    // AI card is visible.
+    final scrollable = find.byType(Scrollable);
+    if (scrollable.evaluate().isNotEmpty) {
+      await tester.drag(scrollable.first, const Offset(0, -1200));
+      await _settle(tester);
+    }
     await _shoot(binding, 7, 'analysis_ai', captions[7]!);
 
-    // 8. Settings.
-    await tester.tap(find.byIcon(Icons.settings));
+    // 8. Settings (opens over the shell via the app-bar icon).
+    await tester.tap(find.byIcon(Icons.settings_outlined).first);
     await _settle(tester);
     await _shoot(binding, 8, 'settings_legal', captions[8]!);
   });
@@ -172,11 +185,16 @@ void main() {
 /// reduce it to 3 s and add a fallback `pump` so a stuck animation
 /// does not stall the entire run.
 Future<void> _settle(WidgetTester tester) async {
+  // Give page transitions and async chart computation time to finish
+  // before we capture. A 500ms pump on top of pumpAndSettle covers cases
+  // where FutureBuilders spawn micro-frames after the animation ends.
   try {
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    await tester.pumpAndSettle(const Duration(seconds: 6));
   } catch (_) {
-    await tester.pump(const Duration(milliseconds: 500));
+    // Fallback: timed out (e.g. infinite ticker); at least give the UI
+    // a moment before shooting.
   }
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 /// Capture a screenshot via the integration-test binding and write it
@@ -189,19 +207,17 @@ Future<void> _shoot(
   String name,
   String caption,
 ) async {
-  // The actual integration-test runner exposes `convertFlutterSurfaceToImage`
-  // for engine-side capture on iOS; on macOS we fall back to taking the
-  // PNG bytes from the binding.
-  await binding.convertFlutterSurfaceToImage();
+  // Convert the iOS Flutter surface to an image so the engine can hand
+  // PNG bytes to the host driver. On macOS this is a no-op.
+  if (Platform.isIOS) {
+    await binding.convertFlutterSurfaceToImage();
+  }
   final size = _sizeFolder();
-  final dir = Directory('publish/screenshots/$size')..createSync(recursive: true);
-  final path = '${dir.path}/${step.toString().padLeft(2, '0')}_$name.png';
-  await binding.takeScreenshot(path);
-  // Caption metadata sidecar — the App Store Connect uploader reads
-  // `*.txt` next to each `*.png` to populate per-screenshot localised
-  // captions. (Optional; ignored if your uploader doesn't support it.)
-  await File('${path.substring(0, path.length - 4)}.txt')
-      .writeAsString(caption);
+  final relName =
+      '$size/${step.toString().padLeft(2, '0')}_$name';
+  // The host-side driver (test_driver/integration_driver.dart) receives
+  // these bytes and writes them to publish/screenshots/<size>/NN_<name>.png.
+  await binding.takeScreenshot(relName);
 }
 
 /// Pixel-size bucket used to name the output folder. iPhone 16 Pro Max

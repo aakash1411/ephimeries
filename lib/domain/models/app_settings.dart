@@ -17,7 +17,7 @@ class AppSettings extends HiveObject {
     this.nameLanguage = NameLanguage.english,
     this.degreeFormat = DegreeFormat.dms,
     this.acceptedLegalVersion = 0,
-    this.analysisEntitled = false,
+    this.analysisEntitled = true,
   });
 
   @HiveField(0)
@@ -49,9 +49,8 @@ class AppSettings extends HiveObject {
   @HiveField(8, defaultValue: 0)
   int acceptedLegalVersion;
 
-  /// Pro Analysis entitlement. `true` after a successful StoreKit purchase
-  /// or after the tester-bypass code has been entered.
-  @HiveField(9, defaultValue: false)
+  /// Pro Analysis entitlement. Always `true` — all features are free.
+  @HiveField(9, defaultValue: true)
   bool analysisEntitled;
 
   AppSettings copyWith({

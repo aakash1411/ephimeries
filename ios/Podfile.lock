@@ -7,9 +7,6 @@ PODS:
   - geolocator_apple (1.2.0):
     - Flutter
     - FlutterMacOS
-  - in_app_purchase_storekit (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - integration_test (0.0.1):
     - Flutter
   - jyotish (1.0.0):
@@ -28,7 +25,6 @@ DEPENDENCIES:
   - foundation_models_framework (from `.symlinks/plugins/foundation_models_framework/ios`)
   - geocoding_ios (from `.symlinks/plugins/geocoding_ios/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
-  - in_app_purchase_storekit (from `.symlinks/plugins/in_app_purchase_storekit/darwin`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - jyotish (from `.symlinks/plugins/jyotish/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -45,8 +41,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/geocoding_ios/ios"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/darwin"
-  in_app_purchase_storekit:
-    :path: ".symlinks/plugins/in_app_purchase_storekit/darwin"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
   jyotish:
@@ -65,7 +59,6 @@ SPEC CHECKSUMS:
   foundation_models_framework: a90ae77b73bb691d63a4442ba5d64fb4d85e0d63
   geocoding_ios: 33776c9ebb98d037b5e025bb0e7537f6dd19646e
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
-  in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   jyotish: 270f0db1d07ab354d8737ed0c4e821fd42b6740c
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499

@@ -122,6 +122,7 @@ class _NorthIndianChartState extends State<NorthIndianChart>
                     activeHouse: _tappedHouse,
                     title: widget.title,
                     showRetrograde: widget.showRetrograde,
+                    chartSize: constraints.maxWidth,
                   ),
                   size: Size.infinite,
                 ),
@@ -253,6 +254,7 @@ class _NorthIndianPainter extends CustomPainter {
     required this.layout,
     required this.activeHouse,
     required this.showRetrograde,
+    required this.chartSize,
     this.title,
   });
 
@@ -263,6 +265,10 @@ class _NorthIndianPainter extends CustomPainter {
   final int? activeHouse;
   final bool showRetrograde;
   final String? title;
+  final double chartSize;
+
+  /// Scale factor relative to a 300px reference chart.
+  double get _s => (chartSize / 300).clamp(1.0, 2.5);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -319,17 +325,17 @@ class _NorthIndianPainter extends CustomPainter {
       _drawText(
         canvas,
         '${sign.number}',
-        center.translate(-10, -18),
-        textStyle.copyWith(color: palette.muted, fontSize: 9),
+        center.translate(-12 * _s, -20 * _s),
+        textStyle.copyWith(color: palette.muted, fontSize: 11 * _s),
       );
       // House number tag (very small, top-right corner)
       _drawText(
         canvas,
         '$house',
-        center.translate(10, -18),
+        center.translate(12 * _s, -20 * _s),
         textStyle.copyWith(
           color: palette.muted,
-          fontSize: 8,
+          fontSize: 10 * _s,
           fontStyle: FontStyle.italic,
         ),
       );
@@ -339,10 +345,10 @@ class _NorthIndianPainter extends CustomPainter {
         _drawText(
           canvas,
           'As',
-          center.translate(-14, 14),
+          center.translate(-16 * _s, 14 * _s),
           textStyle.copyWith(
             color: palette.text,
-            fontSize: 9,
+            fontSize: 11 * _s,
             fontWeight: FontWeight.bold,
           ),
         );
@@ -358,7 +364,7 @@ class _NorthIndianPainter extends CustomPainter {
     Offset center,
     List<PlanetPosition> planets,
   ) {
-    const rowHeight = 11.0;
+    final rowHeight = 13.0 * _s;
     final total = planets.length;
     final startY = center.dy - ((total - 1) * rowHeight / 2) + 2;
     for (var i = 0; i < total; i++) {
@@ -375,7 +381,7 @@ class _NorthIndianPainter extends CustomPainter {
         Offset(center.dx, startY + i * rowHeight),
         textStyle.copyWith(
           color: color,
-          fontSize: 10,
+          fontSize: 12 * _s,
           fontWeight: FontWeight.w600,
           decoration: showRx ? TextDecoration.underline : null,
         ),
@@ -414,5 +420,6 @@ class _NorthIndianPainter extends CustomPainter {
       old.data != data ||
       old.activeHouse != activeHouse ||
       old.palette != palette ||
-      old.showRetrograde != showRetrograde;
+      old.showRetrograde != showRetrograde ||
+      old.chartSize != chartSize;
 }

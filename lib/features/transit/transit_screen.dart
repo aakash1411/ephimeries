@@ -48,7 +48,7 @@ class _TransitScreenState extends ConsumerState<TransitScreen> {
   @override
   Widget build(BuildContext context) {
     final moment = ref.watch(transitMomentProvider);
-    final df = DateFormat.yMMMd().add_jm();
+    final df = DateFormat('dd/MM/yyyy').add_jm();
 
     return Column(
       children: [

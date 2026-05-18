@@ -25,7 +25,7 @@ class TransitOverlayWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat.yMMMd().add_jm();
+    final df = DateFormat('dd/MM/yyyy').add_jm();
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [

@@ -3,8 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/birth_profiles_provider.dart';
+import '../ipad_dashboard/ipad_dashboard_screen.dart';
+
+/// Minimum width (logical pixels) to trigger the iPad dashboard layout.
+const double kTabletBreakpoint = 700;
 
 /// Tab shell around the 4 chart views for a single profile.
+///
+/// On devices wider than [kTabletBreakpoint] (iPad), this automatically shows
+/// the multi-chart [IpadDashboardScreen] instead of the tab-based phone UI.
 class ProfileShell extends ConsumerWidget {
   const ProfileShell({
     super.key,
@@ -33,6 +40,13 @@ class ProfileShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isTablet =
+        MediaQuery.sizeOf(context).shortestSide >= kTabletBreakpoint;
+
+    if (isTablet) {
+      return IpadDashboardScreen(profileId: profileId);
+    }
+
     // Keep the active profile in sync with the route. Only write when the
     // route's profileId genuinely differs from the current selection — this
     // fires once per navigation, not per rebuild (BUG-5).

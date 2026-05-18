@@ -12,11 +12,11 @@ import '../features/home/profile_selector_tab.dart';
 import '../features/legal/disclaimer_gate.dart';
 import '../features/natal_chart/natal_chart_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
-import '../features/paywall/paywall_screen.dart';
 import '../features/profile_shell/profile_shell.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/transit/transit_screen.dart';
+import '../providers/birth_profiles_provider.dart';
 import '../providers/settings_provider.dart';
 
 /// Routes the user can land on **before** they accept the legal disclaimer.
@@ -64,7 +64,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           BirthEntryScreen(editProfileId: state.pathParameters['id']),
     ),
     GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
-    GoRoute(path: '/paywall', builder: (_, _) => const PaywallScreen()),
+    GoRoute(
+      path: '/analysis/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return _StandaloneAnalysisScreen(profileId: id);
+      },
+    ),
     ShellRoute(
       builder: (context, state, child) {
         final id = state.pathParameters['id']!;
@@ -104,3 +110,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
+
+/// Standalone wrapper for [AnalysisScreen] used when navigating from the
+/// iPad dashboard. Syncs the active profile and provides its own AppBar.
+class _StandaloneAnalysisScreen extends ConsumerWidget {
+  const _StandaloneAnalysisScreen({required this.profileId});
+  final String profileId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.read(activeProfileIdProvider);
+    if (current != profileId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(activeProfileIdProvider.notifier).state = profileId;
+      });
+    }
+    final profile = ref.watch(activeProfileProvider);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Analysis · ${profile?.name ?? ''}'),
+      ),
+      body: const AnalysisScreen(),
+    );
+  }
+}

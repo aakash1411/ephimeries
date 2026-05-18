@@ -17,7 +17,7 @@ class ProfileSelectorTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(birthProfilesProvider);
     final activeId = ref.watch(activeProfileIdProvider);
-    final df = DateFormat.yMMMd().add_jm();
+    final df = DateFormat('dd/MM/yyyy').add_jm();
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(

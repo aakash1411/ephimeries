@@ -272,7 +272,7 @@ class _BirthEntryScreenState extends ConsumerState<BirthEntryScreen> {
       _ensureInitialisedFromExisting(existing);
     }
 
-    final dateFmt = DateFormat.yMMMMd();
+    final dateFmt = DateFormat('dd/MM/yyyy');
     final timeFmt = DateFormat.jm();
     final resolution = (_latitude != null)
         ? TimezoneService.classify(_localDateTime, _timezone)
@@ -370,7 +370,7 @@ class _BirthEntryScreenState extends ConsumerState<BirthEntryScreen> {
             const SizedBox(height: 8),
             if (utcPreview != null)
               Text(
-                'UTC: ${DateFormat.yMMMd().add_jm().format(utcPreview)}',
+                'UTC: ${DateFormat('dd/MM/yyyy').add_jm().format(utcPreview)}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             if (resolution?.kind == LocalTimeKind.nonExistent)

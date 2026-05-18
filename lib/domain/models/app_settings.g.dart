@@ -28,7 +28,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       degreeFormat:
           fields[7] == null ? DegreeFormat.dms : fields[7] as DegreeFormat,
       acceptedLegalVersion: fields[8] == null ? 0 : fields[8] as int,
-      analysisEntitled: fields[9] == null ? false : fields[9] as bool,
+      analysisEntitled: fields[9] == null ? true : fields[9] as bool,
     );
   }
 

@@ -65,7 +65,7 @@ class _CurrentBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat.yMMMd();
+    final df = DateFormat('dd/MM/yyyy');
     String fmt(DateTime utc) =>
         TimezoneService.formatInZone(utc, timezoneName, df);
     // Compute the active Maha/Antar at the true current instant, not the
@@ -172,7 +172,7 @@ class _DashaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat.yMMMd();
+    final df = DateFormat('dd/MM/yyyy');
     String fmt(DateTime utc) =>
         TimezoneService.formatInZone(utc, timezoneName, df);
     final color = kPlanetColors[period.planet]!;

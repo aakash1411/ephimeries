@@ -13,6 +13,7 @@ import 'domain/models/app_settings.dart';
 import 'domain/models/birth_profile.dart';
 import 'domain/models/enums.dart';
 import 'providers/chart_providers.dart';
+import 'providers/dashboard_providers.dart';
 import 'providers/hive_providers.dart';
 
 Future<void> main() async {
@@ -59,6 +60,7 @@ Future<void> _bootstrap() async {
   final profilesBox =
       await Hive.openBox<BirthProfile>(ProfileRepository.boxName);
   final settingsBox = await Hive.openBox<AppSettings>(kSettingsBoxName);
+  final dashboardBox = await Hive.openBox<dynamic>(kDashboardBoxName);
 
   // Bootstrap Swiss Ephemeris engine once at launch.
   final jyotish = await initializeJyotish();
@@ -70,6 +72,7 @@ Future<void> _bootstrap() async {
           HiveBoxes(profiles: profilesBox, settings: settingsBox),
         ),
         jyotishProvider.overrideWithValue(jyotish),
+        dashboardBoxProvider.overrideWithValue(dashboardBox),
       ],
       child: const EphimeriesApp(),
     ),

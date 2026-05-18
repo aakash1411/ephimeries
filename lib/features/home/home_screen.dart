@@ -13,7 +13,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(birthProfilesProvider);
-    final df = DateFormat.yMMMd().add_jm();
+    final df = DateFormat('dd/MM/yyyy').add_jm();
 
     return Scaffold(
       appBar: AppBar(
