@@ -28,7 +28,7 @@ const Set<String> _kPreConsentRoutes = {'/legal', '/'};
 /// a shell that owns the bottom navigation bar.
 ///
 /// Built as a Riverpod provider so the global `redirect` closure can read
-/// [settingsProvider] (consent + entitlement flags) without resorting to
+/// [settingsProvider] (the legal-consent flag) without resorting to
 /// a service-locator.
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(

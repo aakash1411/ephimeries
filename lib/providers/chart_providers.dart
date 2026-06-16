@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jyotish/jyotish.dart' as jy;
 
+import '../data/services/ephemeris_assets.dart';
 import '../data/repositories/chart_repository.dart';
 import '../data/repositories/jyotish_chart_repository.dart';
 import '../domain/models/birth_profile.dart';
@@ -23,9 +24,23 @@ final jyotishProvider = Provider<jy.Jyotish>((ref) {
 
 /// One-shot Swiss Ephemeris initializer used at startup. Safe to call
 /// multiple times — `jyotish.initialize()` is idempotent.
+///
+/// Extracts the bundled Swiss Ephemeris data files first and points the
+/// engine at them, so positions use the full ephemeris rather than the
+/// Moshier fallback.
+///
+/// If asset extraction fails for any reason, initialization still proceeds
+/// without a path (Swiss Ephemeris' built-in Moshier model), so a storage
+/// hiccup degrades precision instead of blocking app launch.
 Future<jy.Jyotish> initializeJyotish() async {
+  String? ephemerisPath;
+  try {
+    ephemerisPath = await ensureEphemerisFiles();
+  } catch (_) {
+    ephemerisPath = null;
+  }
   final engine = jy.Jyotish();
-  await engine.initialize();
+  await engine.initialize(ephemerisPath: ephemerisPath);
   return engine;
 }
 

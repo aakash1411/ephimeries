@@ -16,7 +16,10 @@ library;
 /// Bumping this constant forces every existing user to re-accept on the
 /// next launch. Use semantic-style increments tied to material legal
 /// changes (not typo fixes).
-const int kLegalTextVersion = 1;
+///
+/// v2: removed the obsolete in-app-purchase / StoreKit clauses — the app
+/// is free with no purchases — and corrected the data-deletion wording.
+const int kLegalTextVersion = 2;
 
 /// Single short paragraph shown inside the first-launch acceptance card,
 /// above the action buttons. Designed to be the *minimum* reasonable
@@ -46,9 +49,9 @@ To the maximum extent permitted by law, the developer is not liable for any indi
 
 Do not use the app for unlawful purposes, including harassment, stalking, or profiling of others. Do not submit names of real people without their consent.
 
-5. In-app purchases
+5. Price
 
-The Pro Analysis unlock is a one-time purchase processed by Apple's StoreKit. Refund requests are handled by Apple, not by us.
+Ephimeries is free. There are no in-app purchases, subscriptions, or advertisements. Every feature, including the Analysis tab and the optional on-device AI reading, is available at no cost.
 
 6. Open-source license
 
@@ -73,8 +76,7 @@ All your data stays on your device. We do not run any servers and we cannot see 
 What we store on your device
 
 - Birth profiles you create: name, birth date and time, location (city label, latitude, longitude, timezone), approximate-time flag.
-- App settings: chart style, name language, degree format, ayanamsa, theme, AI purchase state.
-- A random app install identifier in iOS Keychain to validate in-app purchases.
+- App settings: chart style, name language, degree format, ayanamsa, and theme.
 
 What we do not collect
 
@@ -88,13 +90,13 @@ Network calls
 
 - Apple Geocoder: when you search a city name. Apple's privacy policy applies.
 - Apple Foundation Models / Apple Intelligence: optional AI reading runs entirely on-device. No prompt or response leaves your device.
-- Apple StoreKit: in-app purchase verification. Apple's standard StoreKit privacy applies.
+
+The app makes no other network calls and contains no analytics, advertising, or in-app purchases.
 
 Your rights
 
-- Export your data: Settings > Data > Export.
-- Delete your data: Settings > Data > Delete all profiles, or delete the app.
 - Edit any profile freely from Home.
+- Delete a profile by swiping it left on Home, or remove every byte of data by deleting the app.
 - Revoke location permission in iOS Settings; the app keeps working.
 
 Children

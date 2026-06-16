@@ -7,26 +7,40 @@ import 'package:ephimeries/domain/models/enums.dart';
 import 'package:ephimeries/providers/birth_profiles_provider.dart';
 import 'package:ephimeries/data/services/timezone_service.dart';
 import 'package:ephimeries/providers/chart_providers.dart';
+import 'package:ephimeries/providers/dashboard_providers.dart';
 import 'package:ephimeries/providers/hive_providers.dart';
+import 'package:ephimeries/features/profile_shell/profile_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:jyotish/jyotish.dart' as jy;
 import 'package:path_provider/path_provider.dart';
 
-/// Drives the app through 8 marketing screens and writes
-/// `publish/screenshots/<size>/NN_<name>.png` for each. Run with:
+/// Drives the app through its marketing screens and writes
+/// `publish/screenshots/<size>/NN_<name>.png` for each.
+///
+/// The flow auto-detects the form factor from the running device:
+///   * iPhone (narrow) → the 8-screen tab-based set (home, natal, varga,
+///     dasha, transit, analysis, AI reading, settings).
+///   * iPad (wide, >= [kTabletBreakpoint]) → the multi-panel dashboard set
+///     (home, dashboard, panel picker, settings, analysis, AI reading),
+///     because iPad replaces the tabs with [IpadDashboardScreen].
+///
+/// Capture a set with `flutter drive` so the host-side driver
+/// (`test_driver/integration_driver.dart`) can write the PNGs to disk:
 ///
 /// ```
-/// flutter test integration_test/screenshot_capture_test.dart \
-///   --device-id <iPhone-16-Pro-Max-simulator-uuid>
+/// flutter drive \
+///   --driver=test_driver/integration_driver.dart \
+///   --target=integration_test/screenshot_capture_test.dart \
+///   -d <simulator-uuid>
 /// ```
 ///
-/// One simulator run = one device size's full set. Repeat for the 6.5"
-/// simulator if you want a second size. Captions can be edited inside
-/// [_captions]; the same caption text is used by App Store Connect.
+/// One simulator run = one device size's full set. The output folder is
+/// derived from the device's pixel size (see [_sizeFolder]): an
+/// iPhone 16/17 Pro Max writes `6.9-inch/`, a 13-inch iPad writes
+/// `13-inch-ipad/`.
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -63,9 +77,13 @@ void main() {
     // Wipe any leftover state from a previous run.
     await Hive.deleteBoxFromDisk('birthProfiles');
     await Hive.deleteBoxFromDisk(kSettingsBoxName);
+    await Hive.deleteBoxFromDisk(kDashboardBoxName);
 
     final profileBox = await Hive.openBox<BirthProfile>('birthProfiles');
     final settingsBox = await Hive.openBox<AppSettings>(kSettingsBoxName);
+    // The iPad dashboard reads its panel layout from this box; without the
+    // override the layout provider throws on tablet-sized devices.
+    await Hive.openBox<dynamic>(kDashboardBoxName);
 
     // Seed two demo profiles so the home screen looks lively.
     await profileBox.put(
@@ -104,18 +122,19 @@ void main() {
       kSettingsKey,
       AppSettings(
         acceptedLegalVersion: 999, // any value >= kLegalTextVersion
-        analysisEntitled: true,
         onboardingCompleted: true,
       ),
     );
   });
 
   testWidgets('capture marketing screenshots', (tester) async {
-    final engine = jy.Jyotish();
-    await engine.initialize();
+    // Use the same initializer as the app so screenshots exercise the real
+    // Swiss Ephemeris path (extracted data files), not the Moshier fallback.
+    final engine = await initializeJyotish();
 
     final profilesBox = Hive.box<BirthProfile>('birthProfiles');
     final settingsBox = Hive.box<AppSettings>(kSettingsBoxName);
+    final dashboardBox = Hive.box<dynamic>(kDashboardBoxName);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -124,6 +143,7 @@ void main() {
             HiveBoxes(profiles: profilesBox, settings: settingsBox),
           ),
           jyotishProvider.overrideWithValue(engine),
+          dashboardBoxProvider.overrideWithValue(dashboardBox),
           activeProfileIdProvider.overrideWith((_) => 'reviewer'),
         ],
         child: const EphimeriesApp(),
@@ -137,48 +157,116 @@ void main() {
     await _shoot(binding, 1, 'home', captions[1]!);
 
     // Tap the Reviewer profile card (the Leo-lagna reference chart) to
-    // enter the chart shell.
+    // enter the chart view. On iPhone this is the tab shell; on iPad it is
+    // the multi-panel dashboard.
     await tester.tap(find.widgetWithText(Card, 'Reviewer'));
     await _settle(tester);
 
-    // 2. Natal chart D1.
-    await _shoot(binding, 2, 'natal_d1', captions[2]!);
-
-    // 3. Divisional charts → tap Divisional tab.
-    await tester.tap(find.byIcon(Icons.grid_4x4));
-    await _settle(tester);
-    await _shoot(binding, 3, 'divisional_d9', captions[3]!);
-
-    // 4. Dasha tab.
-    await tester.tap(find.byIcon(Icons.timeline));
-    await _settle(tester);
-    await _shoot(binding, 4, 'dasha', captions[4]!);
-
-    // 5. Transit tab.
-    await tester.tap(find.byIcon(Icons.public));
-    await _settle(tester);
-    await _shoot(binding, 5, 'transit', captions[5]!);
-
-    // 6. Analysis tab (entitlement pre-granted in setUpAll).
-    await tester.tap(find.byIcon(Icons.insights));
-    await _settle(tester);
-    await _shoot(binding, 6, 'analysis_overview', captions[6]!);
-
-    // 7. AI reading section. Scroll down within whichever scrollable the
-    // analysis screen renders (ListView or SingleChildScrollView) so the
-    // AI card is visible.
-    final scrollable = find.byType(Scrollable);
-    if (scrollable.evaluate().isNotEmpty) {
-      await tester.drag(scrollable.first, const Offset(0, -1200));
-      await _settle(tester);
+    if (_isTablet()) {
+      await _captureIpadFlow(binding, tester);
+    } else {
+      await _capturePhoneFlow(binding, tester, captions);
     }
-    await _shoot(binding, 7, 'analysis_ai', captions[7]!);
-
-    // 8. Settings (opens over the shell via the app-bar icon).
-    await tester.tap(find.byIcon(Icons.settings_outlined).first);
-    await _settle(tester);
-    await _shoot(binding, 8, 'settings_legal', captions[8]!);
   });
+}
+
+/// iPhone tab-based flow: 8 screens reached through the bottom navigation
+/// bar owned by [ProfileShell].
+Future<void> _capturePhoneFlow(
+  IntegrationTestWidgetsFlutterBinding binding,
+  WidgetTester tester,
+  Map<int, String> captions,
+) async {
+  // 2. Natal chart D1.
+  await _shoot(binding, 2, 'natal_d1', captions[2]!);
+
+  // 3. Divisional charts → tap Divisional tab.
+  await tester.tap(find.byIcon(Icons.grid_4x4));
+  await _settle(tester);
+  await _shoot(binding, 3, 'divisional_d9', captions[3]!);
+
+  // 4. Dasha tab.
+  await tester.tap(find.byIcon(Icons.timeline));
+  await _settle(tester);
+  await _shoot(binding, 4, 'dasha', captions[4]!);
+
+  // 5. Transit tab.
+  await tester.tap(find.byIcon(Icons.public));
+  await _settle(tester);
+  await _shoot(binding, 5, 'transit', captions[5]!);
+
+  // 6. Analysis tab.
+  await tester.tap(find.byIcon(Icons.insights));
+  await _settle(tester);
+  await _shoot(binding, 6, 'analysis_overview', captions[6]!);
+
+  // 7. AI reading section. Scroll down within whichever scrollable the
+  // analysis screen renders (ListView or SingleChildScrollView) so the
+  // AI card is visible.
+  final scrollable = find.byType(Scrollable);
+  if (scrollable.evaluate().isNotEmpty) {
+    await tester.drag(scrollable.first, const Offset(0, -1200));
+    await _settle(tester);
+  }
+  await _shoot(binding, 7, 'analysis_ai', captions[7]!);
+
+  // 8. Settings (opens over the shell via the app-bar icon).
+  await tester.tap(find.byIcon(Icons.settings_outlined).first);
+  await _settle(tester);
+  await _shoot(binding, 8, 'settings_legal', captions[8]!);
+}
+
+/// iPad dashboard flow. [IpadDashboardScreen] shows five live panels at
+/// once and hosts Analysis/Settings behind app-bar icons, so the set is
+/// shaped differently from the phone tabs.
+Future<void> _captureIpadFlow(
+  IntegrationTestWidgetsFlutterBinding binding,
+  WidgetTester tester,
+) async {
+  // 2. The five-panel dashboard (D1, D9, dasha, planet table, transit).
+  await _shoot(binding, 2, 'dashboard', 'Five live charts on one screen.');
+
+  // 3. Panel-type picker — shows the dashboard is fully customisable.
+  // Defensive: if the sheet can't be driven, skip without failing the run.
+  final tune = find.byIcon(Icons.tune);
+  if (tune.evaluate().isNotEmpty) {
+    await tester.tap(tune.first);
+    await _settle(tester);
+    await _shoot(binding, 3, 'panel_picker', 'Swap any panel: D1 to D60.');
+    // Dismiss the modal sheet by tapping the scrim above it.
+    await tester.tapAt(const Offset(40, 40));
+    await _settle(tester);
+  }
+
+  // 4. Settings (pushed over the dashboard via the app-bar gear), then back.
+  await tester.tap(find.byIcon(Icons.settings_outlined).first);
+  await _settle(tester);
+  await _shoot(binding, 4, 'settings_legal', 'Open-source under AGPL-3.0.');
+  await tester.pageBack();
+  await _settle(tester);
+
+  // 5. Analysis (pushed via the insights icon).
+  await tester.tap(find.byIcon(Icons.insights).first);
+  await _settle(tester);
+  await _shoot(binding, 5, 'analysis_overview', 'Key placements and dasha.');
+
+  // 6. AI reading — scroll the analysis list to reveal the on-device card.
+  final scrollable = find.byType(Scrollable);
+  if (scrollable.evaluate().isNotEmpty) {
+    await tester.drag(scrollable.first, const Offset(0, -1400));
+    await _settle(tester);
+  }
+  await _shoot(binding, 6, 'analysis_ai', 'On-device AI reading.');
+}
+
+/// Whether the running device uses the iPad dashboard layout. Mirrors the
+/// app's own breakpoint in [ProfileShell] ([kTabletBreakpoint] logical px
+/// on the short edge).
+bool _isTablet() {
+  final view = WidgetsBinding.instance.platformDispatcher.views.first;
+  final shortLogical =
+      view.physicalSize.shortestSide / view.devicePixelRatio;
+  return shortLogical >= kTabletBreakpoint;
 }
 
 /// Pump until idle. The default timeout in `pumpAndSettle` is 10 s; we
@@ -220,13 +308,15 @@ Future<void> _shoot(
   await binding.takeScreenshot(relName);
 }
 
-/// Pixel-size bucket used to name the output folder. iPhone 16 Pro Max
-/// (6.9-inch) has 1290 x 2796 logical pixels; iPhone 14 Plus (6.5-inch)
-/// has 1284 x 2778. We bucket by short edge so a single test invocation
-/// writes to the right folder.
+/// Pixel-size bucket used to name the output folder, matched to App Store
+/// Connect display classes. Buckets by the short edge in physical pixels:
+///   * 13-inch iPad (iPad Pro 13" = 2064 x 2752, iPad Air 13" = 2048 x 2732)
+///   * 6.9-inch iPhone (iPhone 16/17 Pro Max = 1320 x 2868)
+///   * 6.5-inch iPhone (iPhone 14 Plus = 1284 x 2778)
 String _sizeFolder() {
   final view = WidgetsBinding.instance.platformDispatcher.views.first;
   final shortPx = view.physicalSize.shortestSide.round();
+  if (shortPx >= 2000) return '13-inch-ipad';
   if (shortPx >= 1290) return '6.9-inch';
   if (shortPx >= 1242) return '6.5-inch';
   return 'other-${shortPx}px';

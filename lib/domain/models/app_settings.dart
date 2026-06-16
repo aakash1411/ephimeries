@@ -17,7 +17,6 @@ class AppSettings extends HiveObject {
     this.nameLanguage = NameLanguage.english,
     this.degreeFormat = DegreeFormat.dms,
     this.acceptedLegalVersion = 0,
-    this.analysisEntitled = true,
   });
 
   @HiveField(0)
@@ -49,10 +48,6 @@ class AppSettings extends HiveObject {
   @HiveField(8, defaultValue: 0)
   int acceptedLegalVersion;
 
-  /// Pro Analysis entitlement. Always `true` — all features are free.
-  @HiveField(9, defaultValue: true)
-  bool analysisEntitled;
-
   AppSettings copyWith({
     ChartStyle? chartStyle,
     AyanamsaType? ayanamsa,
@@ -63,7 +58,6 @@ class AppSettings extends HiveObject {
     NameLanguage? nameLanguage,
     DegreeFormat? degreeFormat,
     int? acceptedLegalVersion,
-    bool? analysisEntitled,
   }) {
     return AppSettings(
       chartStyle: chartStyle ?? this.chartStyle,
@@ -75,7 +69,6 @@ class AppSettings extends HiveObject {
       nameLanguage: nameLanguage ?? this.nameLanguage,
       degreeFormat: degreeFormat ?? this.degreeFormat,
       acceptedLegalVersion: acceptedLegalVersion ?? this.acceptedLegalVersion,
-      analysisEntitled: analysisEntitled ?? this.analysisEntitled,
     );
   }
 }

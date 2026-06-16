@@ -12,6 +12,10 @@
 .swiftpm/
 migrate_working_dir/
 
+# Local scratch directory for throwaway scripts (never committed)
+_tmp/
+__pycache__/
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -46,6 +50,11 @@ app.*.map.json
 /android/app/release
 
 
-# App Store publishing artifacts (sensitive: contains screenshots + metadata)
-publish/
+# App Store publishing artifacts (sensitive: contains screenshots + internal
+# guide + reviewer notes). Ignore the folder contents, but keep the two
+# public-facing legal documents tracked so the App Store privacy-policy URL
+# (raw.githubusercontent.com/.../publish/PRIVACY_POLICY.md) resolves.
+publish/*
+!publish/PRIVACY_POLICY.md
+!publish/TERMS_OF_SERVICE.md
 

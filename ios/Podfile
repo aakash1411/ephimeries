@@ -1,4 +1,8 @@
-platform :ios, '26.0'
+# Matches the Runner target's deployment target. The Foundation Models
+# plugin weak-links FoundationModels and gates every call behind
+# `#available(iOS 26.0)`, so the app installs and runs on iOS 16.6+ and only
+# uses Apple Intelligence on iOS 26+.
+platform :ios, '16.6'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'

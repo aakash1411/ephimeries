@@ -28,14 +28,13 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       degreeFormat:
           fields[7] == null ? DegreeFormat.dms : fields[7] as DegreeFormat,
       acceptedLegalVersion: fields[8] == null ? 0 : fields[8] as int,
-      analysisEntitled: fields[9] == null ? true : fields[9] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.chartStyle)
       ..writeByte(1)
@@ -53,9 +52,7 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
       ..writeByte(7)
       ..write(obj.degreeFormat)
       ..writeByte(8)
-      ..write(obj.acceptedLegalVersion)
-      ..writeByte(9)
-      ..write(obj.analysisEntitled);
+      ..write(obj.acceptedLegalVersion);
   }
 
   @override
